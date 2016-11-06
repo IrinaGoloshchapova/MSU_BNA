@@ -19,13 +19,13 @@ class Glm(object):
                  **kwargs):
 
         families = dict(
-            normal=glm.families.Normal(),
-            student=glm.families.StudentT(),
-            binomial=glm.families.Binomial(),
-            poisson=glm.families.Poisson()
+            normal=glm.families.Normal,
+            student=glm.families.StudentT,
+            binomial=glm.families.Binomial,
+            poisson=glm.families.Poisson
         )
         if isinstance(family, str):
-            family = families[family]
+            family = families[family]()
 
         res = glm.glm(formula,
                       data,
