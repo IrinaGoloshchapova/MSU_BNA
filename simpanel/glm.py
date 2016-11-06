@@ -1,10 +1,14 @@
 # coding=utf-8
 
+import pymc3 as pm
 from pymc3 import glm
 
 
 class Glm(object):
     """A more convenient wrapper for glm"""
+    advifit = None
+    trace = None
+
     def __init__(self, formula, data,
                  priors=None,
                  intercept_prior=None,
@@ -68,3 +72,19 @@ class Glm(object):
                    family=family,
                    model=model,
                    **kwargs)
+
+    def advi(self, **kwargs):
+        self.advifit = pm.advi(**kwargs)
+        return self.advifit
+
+    def nuts(self, draws=300, njobs=4, model=None, **kwargs):
+        import numpy as np
+        if not self.advifit:
+            fit = self.advi(verbose=False)
+        else:
+            fit = self.advifit
+        model = pm.modelcontext(model)
+        step = pm.NUTS(scaling=np.power(model.dict_to_array(fit.stds), 2), is_cov=True)
+        trace = pm.sample(draws=draws, njobs=njobs, step=step, start=fit.means, **kwargs)
+        self.trace = trace
+        return trace
