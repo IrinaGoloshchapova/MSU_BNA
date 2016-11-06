@@ -14,7 +14,8 @@ ROOT = os.path.dirname(__file__)
 class TestGlm(unittest.TestCase):
     def setUp(self):
         data = pd.read_csv(os.path.join(ROOT, 'data', 'testdata.csv'))
-        self.y, self.X = data.iloc[:, 0], data.iloc[:, 1:]
+        self.y, self.X = data.iloc[:, 0], data.iloc[:, 1:-1]
+        self.mdata = data.iloc[:10]
         self.data = data
 
     def test_init(self):
@@ -24,7 +25,7 @@ class TestGlm(unittest.TestCase):
             [patsy.Term([patsy.LookupFactor(p)]) for p in self.X.columns]
         )
         with pm.Model():
-            _ = Glm(formula, self.data)
+            _ = Glm(formula, self.mdata)
 
     def test_init_from_xy(self):
         import numpy as np
