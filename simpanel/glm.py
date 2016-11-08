@@ -1,6 +1,5 @@
 # coding=utf-8
 
-import numpy as np
 import pymc3 as pm
 import simpanel._glm as glm
 from simpanel._families import Normal, StudentT, Poisson, Binomial
@@ -11,14 +10,13 @@ class Glm(object):
     advifit = None
     trace = None
 
-    def __init__(self, formula, data,
+    def __init__(self, name, formula, data,
                  priors=None,
                  intercept_prior=None,
                  regressor_prior=None,
                  init_vals=None,
                  family='normal',
-                 model=None,
-                 name='glm_model'
+                 model=None
                  ):
         families = dict(
             normal=Normal,
@@ -44,14 +42,14 @@ class Glm(object):
         self.coefs = coefs
 
     @classmethod
-    def from_xy(cls, X, y,
+    def from_xy(cls, name, X, y,
                 priors=None,
                 intercept_prior=None,
                 regressor_prior=None,
                 init_vals=None,
                 family='normal',
-                model=None,
-                name='glm_model'):
+                model=None
+                ):
         import patsy
         import pandas as pd
 
@@ -67,15 +65,14 @@ class Glm(object):
             [patsy.Term([patsy.LookupFactor(y.name)])],
             [patsy.Term([patsy.LookupFactor(p)]) for p in X.columns]
         )
-        return cls(formula=formula,
-                   data=data,
+        return cls(name, formula, data,
                    priors=priors,
                    intercept_prior=intercept_prior,
                    regressor_prior=regressor_prior,
                    init_vals=init_vals,
                    family=family,
-                   model=model,
-                   name=name)
+                   model=model
+                   )
 
     def advi(self, **kwargs):
         self.advifit = pm.advi(**kwargs)

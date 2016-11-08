@@ -25,19 +25,37 @@ class TestGlm(unittest.TestCase):
             [patsy.Term([patsy.LookupFactor(p)]) for p in self.X.columns]
         )
         with pm.Model():
-            _ = Glm(formula, self.mdata)
+            _ = Glm('glm', formula, self.mdata)
 
     def test_init_from_xy(self):
         import numpy as np
         with pm.Model():
-            _ = Glm.from_xy(self.X, self.y)
+            _ = Glm.from_xy('glm', self.X, self.y)
         with pm.Model():
-            _ = Glm.from_xy(np.asarray(self.X), self.y)
+            _ = Glm.from_xy('glm', np.asarray(self.X), self.y)
         with pm.Model():
-            _ = Glm.from_xy(self.X, np.asarray(self.y))
+            _ = Glm.from_xy('glm', self.X, np.asarray(self.y))
         with pm.Model():
-            _ = Glm.from_xy(np.asarray(self.X), np.asarray(self.y))
+            _ = Glm.from_xy('glm', np.asarray(self.X), np.asarray(self.y))
 
+    def test_advi(self):
+        with pm.Model():
+            aus = self.data.ix[self.data.Country == 'Australia', :-1]
+            g = Glm.from_xy('glm', aus.iloc[:, 1:], aus.iloc[:, 0])
+            fit = g.advi(verbose=False)
+        self.assertTrue(all(fit.means.values()))
+
+    def test_nuts(self):
+        with pm.Model():
+            aus = self.data.ix[self.data.Country == 'Australia', :-1]
+            g = Glm.from_xy('glm', aus.iloc[:, 1:], aus.iloc[:, 0])
+            trace = g.nuts(draws=10)
+        self.assertTrue(all(trace))
+
+    def test_name_does_not_overlaps(self):
+        with pm.Model():
+            _ = Glm.from_xy('glm1', self.X, self.y)
+            _ = Glm.from_xy('glm2', self.X, self.y)
 
 if __name__ == '__main__':
     unittest.main()
