@@ -1,7 +1,8 @@
 # coding=utf-8
 
 import pymc3 as pm
-from pymc3 import glm
+import simpanel._glm as glm
+from simpanel._families import Normal, StudentT, Poisson, Binomial
 
 
 class Glm(object):
@@ -9,52 +10,53 @@ class Glm(object):
     advifit = None
     trace = None
 
-    def __init__(self, formula, data,
+    def __init__(self, name, formula, data,
                  priors=None,
                  intercept_prior=None,
                  regressor_prior=None,
                  init_vals=None,
                  family='normal',
-                 model=None,
-                 **kwargs):
-
+                 model=None
+                 ):
         families = dict(
-            normal=glm.families.Normal(),
-            student=glm.families.StudentT(),
-            binomial=glm.families.Binomial(),
-            poisson=glm.families.Poisson()
+            normal=Normal,
+            student=StudentT,
+            binomial=Binomial,
+            poisson=Poisson
         )
         if isinstance(family, str):
-            family = families[family]
+            family = families[family]()
 
-        res = glm.glm(formula,
-                      data,
-                      priors=priors,
-                      intercept_prior=intercept_prior,
-                      regressor_prior=regressor_prior,
-                      init_vals=init_vals,
-                      family=family,
-                      model=model,
-                      **kwargs)
-        self.yest = res[0]
-        self.coefs = res[1:]
+        y_est, coefs = glm.glm(
+                name=name,
+                formula=formula,
+                data=data,
+                priors=priors,
+                intercept_prior=intercept_prior,
+                regressor_prior=regressor_prior,
+                init_vals=init_vals,
+                family=family,
+                model=model,
+                )
+        self.y_est = y_est
+        self.coefs = coefs
 
     @classmethod
-    def from_xy(cls, X, y,
+    def from_xy(cls, name, X, y,
                 priors=None,
                 intercept_prior=None,
                 regressor_prior=None,
                 init_vals=None,
                 family='normal',
-                model=None,
-                **kwargs):
+                model=None
+                ):
         import patsy
         import pandas as pd
 
-        name = 'y_target'
+        _name = 'y_target'
         if hasattr(y, 'name'):
-            name = y.name or name
-        y = pd.Series(y, name=name)
+            _name = y.name or _name
+        y = pd.Series(y, name=_name)
         if not isinstance(X, pd.DataFrame):
             cols = ['x%d' % i for i in range(X.shape[1])]
             X = pd.DataFrame(X, columns=cols)
@@ -63,15 +65,14 @@ class Glm(object):
             [patsy.Term([patsy.LookupFactor(y.name)])],
             [patsy.Term([patsy.LookupFactor(p)]) for p in X.columns]
         )
-        return cls(formula=formula,
-                   data=data,
+        return cls(name, formula, data,
                    priors=priors,
                    intercept_prior=intercept_prior,
                    regressor_prior=regressor_prior,
                    init_vals=init_vals,
                    family=family,
-                   model=model,
-                   **kwargs)
+                   model=model
+                   )
 
     def advi(self, **kwargs):
         self.advifit = pm.advi(**kwargs)
